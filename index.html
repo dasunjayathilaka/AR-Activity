@@ -1,0 +1,402 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AR Solar System Exhibition</title>
+
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+
+    <!-- AR.js -->
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Status Banner */
+
+        #status {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 400px;
+            padding: 14px;
+            background: linear-gradient(135deg, #c0392b, #922b21);
+            color: white;
+            text-align: center;
+            border-radius: 12px;
+            z-index: 999;
+            font-weight: bold;
+            font-size: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.4);
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <!-- Marker Status -->
+
+    <div id="status">
+        🌌 Find the Hiro Marker
+    </div>
+
+
+    <script>
+
+        // Change planet colour when clicked
+
+        AFRAME.registerComponent('change-color', {
+
+            init: function () {
+
+                const colors = [
+                    '#3498DB',
+                    '#27AE60',
+                    '#E74C3C',
+                    '#F1C40F',
+                    '#9B59B6',
+                    '#FF8C00'
+                ];
+
+                let index = 0;
+
+                this.el.addEventListener('click', () => {
+
+                    index++;
+
+                    if (index >= colors.length) {
+                        index = 0;
+                    }
+
+                    this.el.setAttribute('color', colors[index]);
+
+                });
+
+            }
+
+        });
+
+
+        // Enlarge Saturn when clicked
+
+        AFRAME.registerComponent('grow-object', {
+
+            init: function () {
+
+                this.isBig = false;
+
+                this.originalScale = this.el.object3D.scale.clone();
+
+                this.el.addEventListener('click', () => {
+
+                    this.isBig = !this.isBig;
+
+                    let multiplier = this.isBig ? 1.5 : 1;
+
+                    this.el.object3D.scale.copy(
+                        this.originalScale
+                    );
+
+                    this.el.object3D.scale.multiplyScalar(
+                        multiplier
+                    );
+
+                });
+
+            }
+
+        });
+
+
+        // Marker status
+
+        AFRAME.registerComponent('marker-status', {
+
+            init: function () {
+
+                const status = document.querySelector('#status');
+
+                this.el.addEventListener('markerFound', () => {
+
+                    status.innerText = '🌍 Solar System Detected!';
+                    status.style.background =
+                        'linear-gradient(135deg, #27ae60, #1e8449)';
+
+                });
+
+                this.el.addEventListener('markerLost', () => {
+
+                    status.innerText = '🌌 Marker Lost - Find Hiro Marker';
+                    status.style.background =
+                        'linear-gradient(135deg, #c0392b, #922b21)';
+
+                });
+
+            }
+
+        });
+
+
+        // 3D Model Loading
+
+        AFRAME.registerComponent('model-status', {
+
+            init: function () {
+
+                this.el.addEventListener('model-loaded', () => {
+
+                    console.log('Astronaut model loaded successfully');
+
+                });
+
+                this.el.addEventListener('model-error', () => {
+
+                    console.error('Astronaut model failed to load');
+
+                    const status = document.querySelector('#status');
+
+                    status.innerText = '3D Model Failed to Load';
+
+                });
+
+            }
+
+        });
+
+    </script>
+
+
+    <!-- AR Scene -->
+
+    <a-scene
+        embedded
+        vr-mode-ui="enabled: false"
+        arjs="sourceType: webcam; debugUIEnabled: false;"
+    >
+
+        <!-- Hiro Marker -->
+
+        <a-marker
+            preset="hiro"
+            emitevents="true"
+            marker-status
+        >
+
+            <!-- Space Exhibition Floor -->
+
+            <a-plane
+                position="0 0 0"
+                rotation="-90 0 0"
+                width="2"
+                height="2"
+                color="#080F2B">
+            </a-plane>
+
+
+            <!-- Decorative Orbit Ring -->
+
+            <a-torus
+                position="0 0.03 0"
+                rotation="90 0 0"
+                radius="0.55"
+                radius-tubular="0.008"
+                color="#5DADE2">
+            </a-torus>
+
+
+            <!-- Sun -->
+
+            <a-sphere
+                position="0 0.4 0"
+                radius="0.23"
+                color="#F1C40F"
+                material="emissive: #F39C12; emissiveIntensity: 0.6"
+                animation="
+                    property: scale;
+                    from: 1 1 1;
+                    to: 1.15 1.15 1.15;
+                    dur: 1500;
+                    direction: alternate;
+                    loop: true">
+            </a-sphere>
+
+
+            <!-- Earth Orbit -->
+
+            <a-entity
+                position="0 0.4 0"
+                animation="
+                    property: rotation;
+                    to: 0 360 0;
+                    dur: 8000;
+                    easing: linear;
+                    loop: true"
+            >
+
+                <!-- Earth -->
+
+                <a-sphere
+                    position="0.55 0 0"
+                    radius="0.11"
+                    color="#3498DB"
+                    class="clickable"
+                    change-color>
+                </a-sphere>
+
+            </a-entity>
+
+
+            <!-- Mars -->
+
+            <a-sphere
+                position="-0.85 0.4 0"
+                radius="0.1"
+                color="#E74C3C">
+            </a-sphere>
+
+
+            <!-- Saturn -->
+
+            <a-sphere
+                id="saturn"
+                position="0.65 0.4 -0.5"
+                radius="0.13"
+                color="#D4AC0D"
+                class="clickable"
+                grow-object>
+            </a-sphere>
+
+
+            <!-- Saturn Ring -->
+
+            <a-torus
+                position="0.65 0.4 -0.5"
+                rotation="90 0 0"
+                radius="0.19"
+                radius-tubular="0.025"
+                color="#F5CBA7">
+            </a-torus>
+
+
+            <!-- Animated Moon -->
+
+            <a-sphere
+                position="-0.6 0.25 0.5"
+                radius="0.04"
+                color="#BDC3C7"
+                animation="
+                    property: position;
+                    from: -0.6 0.25 0.5;
+                    to: -0.6 0.45 0.5;
+                    dur: 1500;
+                    direction: alternate;
+                    loop: true">
+            </a-sphere>
+
+
+            <!-- Decorative Stars -->
+
+            <a-sphere
+                position="-0.5 0.8 -0.4"
+                radius="0.05"
+                color="#FFFFFF">
+            </a-sphere>
+
+            <a-sphere
+                position="0.65 0.8 0.35"
+                radius="0.035"
+                color="#FFFFFF">
+            </a-sphere>
+
+            <a-sphere
+                position="-0.85 0.65 0.65"
+                radius="0.025"
+                color="#F1C40F">
+            </a-sphere>
+
+            <a-sphere
+                position="0.2 0.85 -0.75"
+                radius="0.03"
+                color="#FFFFFF">
+            </a-sphere>
+
+
+            <!-- 3D Astronaut -->
+
+            <a-entity
+                id="astronaut"
+                gltf-model="url(https://modelviewer.dev/shared-assets/models/Astronaut.glb)"
+                position="0.75 0.05 0.5"
+                scale="0.5 0.5 0.5"
+                rotation="0 0 0"
+                model-status>
+            </a-entity>
+
+
+            <!-- Exhibition Title -->
+
+            <a-text
+                value="SOLAR SYSTEM"
+                position="0 1.05 0"
+                align="center"
+                width="3"
+                color="#F1C40F">
+            </a-text>
+
+
+            <!-- Subtitle -->
+
+            <a-text
+                value="EXPLORE THE UNIVERSE"
+                position="0 0.93 0"
+                align="center"
+                width="2.5"
+                color="#85C1E9">
+            </a-text>
+
+
+            <!-- Instructions -->
+
+            <a-text
+                value="Tap Earth to Change Colour"
+                position="0 0.9 0.7"
+                align="center"
+                width="2"
+                color="#FFFF00">
+            </a-text>
+
+            <a-text
+                value="Tap Saturn to Enlarge"
+                position="0 0.75 0.7"
+                align="center"
+                width="2"
+                color="#FFFFFF">
+            </a-text>
+
+
+        </a-marker>
+
+
+        <!-- Camera -->
+
+        <a-entity
+            camera
+            cursor="rayOrigin: mouse; fuse: false"
+            raycaster="objects: .clickable">
+        </a-entity>
+
+    </a-scene>
+
+</body>
+</html>
